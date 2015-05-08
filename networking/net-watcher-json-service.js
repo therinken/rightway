@@ -8,11 +8,18 @@ const
     server = net.createServer(function(connection) {
         //reporting
         console.log('Subscriber connected.');
-        connection.write("Now watching '" + filename + "' for changes...\n");
+        connection.write(JSON.stringify({
+            type: 'watching',
+            file: filename
+        }) + '\n');
 
         //watcher setup
         var watcher = fs.watch(filename, function() {
-            connection.write("File '" + filename + "' changed: " + new Date() + "\n");
+            connection.write(JSON.stringify({
+                type: 'changed',
+                file: filename,
+                timestamp: Date.now()
+            }) + '\n');
         });
 
         //cleanup
@@ -26,6 +33,13 @@ if (!filename) {
     throw Error('No target filename was specified');
 }
 
-server.listen(5432, function() {
+server.listen(8124, function() {
     console.log('Listening for subcribers...');
 });
+
+//open up 3 terminal windows pointing to this dir...
+//window 1: node --harmony net-watcher.js target.txt
+//window 2: telnet localhost 8124
+//window 3: touch target.txt
+//
+//Shazam! Socket-to-ya!
